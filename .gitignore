@@ -1,28 +1,10 @@
-# Java
-*.class
-*.jar
-*.war
-*.ear
+.idea/
+*.iml
 target/
 build/
 out/
-
-# IntelliJ IDEA
-.idea/
-*.iml
-
-# Maven wrapper
-.mvn/wrapper/maven-wrapper.jar
-
-# Logs
+*.class
 *.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Node
+.mvn/wrapper/maven-wrapper.jar
 node_modules/
 
-# Docker
-*.env
