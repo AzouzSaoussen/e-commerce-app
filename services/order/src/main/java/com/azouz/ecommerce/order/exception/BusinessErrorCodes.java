@@ -1,16 +1,15 @@
-package com.azouz.ecommerce.product.exception;
+package com.azouz.ecommerce.order.exception;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import java.util.Arrays;
 
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 
 public enum BusinessErrorCodes {
     NO_CODE(0, NOT_IMPLEMENTED, "No code"),
-    PRODUCT_NOT_FOUND(1003, HttpStatus.CONFLICT, "Product not found"),
-    CATEGORY_NOT_FOUND(1004, HttpStatus.NOT_FOUND, "Category not found"),
-    PRODUCT_PURCHASE_VALIDATION_FAILED(1005, HttpStatus.BAD_REQUEST, "Some requested products do not exists or are invalid"),
-    INSUFFICIENT_STOCK(1007,HttpStatus.BAD_REQUEST ,"Insufficient stock available ")
+    CUSTOMER_NOT_FOUND(1002, HttpStatus.NOT_FOUND, "Customer not found"),
     ;
     @Getter
     private final int code;
@@ -24,4 +23,11 @@ public enum BusinessErrorCodes {
         this.description = description;
         this.httpStatus = status;
     }
+    public static BusinessErrorCodes fromHttpStatusCode(int statusCode) {
+        return Arrays.stream(BusinessErrorCodes.values())
+                .filter(code -> code.getHttpStatus().value() == statusCode)
+                .findFirst()
+                .orElse(NO_CODE);
+    }
+
 }

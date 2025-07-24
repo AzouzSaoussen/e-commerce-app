@@ -68,4 +68,15 @@ public class GlobalExceptionHandler {
                         .error("An unexpected error occurred. Please contact support.")
                         .build());
     }
+    @ExceptionHandler(ProductPurchaseException.class)
+    public ResponseEntity<ExceptionResponse> handleProductPurchaseException(ProductPurchaseException exp) {
+        BusinessErrorCodes errorCode= exp.getErrorCode();
+        logger.error("Product purchase exception");
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(ExceptionResponse.builder()
+                        .businessErrorCode(errorCode.getCode())
+                        .businessErrorDescription(errorCode.getDescription())
+                        .build());
+    }
 }

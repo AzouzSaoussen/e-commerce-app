@@ -1,10 +1,12 @@
 package com.azouz.ecommerce.product.mapper;
 
+import com.azouz.ecommerce.product.dto.ProductPurchaseResponse;
 import com.azouz.ecommerce.product.dto.ProductRequest;
 import com.azouz.ecommerce.product.dto.ProductResponse;
 import com.azouz.ecommerce.product.exception.CategoryNotFoundException;
 import com.azouz.ecommerce.product.model.Product;
 import com.azouz.ecommerce.product.repository.CategoryRepository;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +36,16 @@ public class ProductMapper {
                 product.getCategory().getId(),
                 product.getCategory().getName(),
                 product.getCategory().getDescription()
+        );
+    }
+
+    public ProductPurchaseResponse toProductPurchaseResponse(Product product, @NotNull(message = "Quantity is mandatory") double quantity) {
+        return new ProductPurchaseResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                quantity
         );
     }
 }
