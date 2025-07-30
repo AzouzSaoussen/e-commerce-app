@@ -10,11 +10,14 @@ import com.azouz.ecommerce.order.mapper.OrderMapper;
 import com.azouz.ecommerce.order.repository.OrderRepository;
 import com.azouz.ecommerce.orderline.OrderLineRequest;
 import com.azouz.ecommerce.orderline.OrderLineService;
+import com.azouz.ecommerce.payment.PaymentClient;
+import com.azouz.ecommerce.payment.PaymentRequest;
 import com.azouz.ecommerce.product.ProductClient;
 import com.azouz.ecommerce.product.PurchaseRequest;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +27,7 @@ import static com.azouz.ecommerce.order.exception.BusinessErrorCodes.CUSTOMER_NO
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class OrderServiceImpl implements OrderService {
     private final CustomerClient customerClient;
     private final ProductClient productClient;
@@ -31,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper mapper;
     private final OrderLineService orderLineService;
     private final OrderProducer orderProducer;
+    private final PaymentClient paymentClient;
 
     @Transactional
     @Override
@@ -56,8 +61,17 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
-        //todo start payment process --> payment-ms
 
+        var paymentRequest = new PaymentRequest(
+                request.id(),
+                request.totalAmount(),
+                request.paymentMethod(),
+                order.getId(),
+                order.getReference(),
+                customer
+        );
+        var paymentId = paymentClient.requestOrderPayment(paymentRequest);
+        log.info("Payment request initiated. Payment ID: {}", paymentId);
         orderProducer.sendOrderConfirmation(
                 new OrderConfirmation(
                         request.reference(),
