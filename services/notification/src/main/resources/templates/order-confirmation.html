@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmation</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 20px; }
+        h2 { color: #1565c0; }
+        p { font-size: 15px; color: #444; }
+        .order-details { margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f0f0f0; }
+        .footer { margin-top: 20px; font-size: 13px; color: #777; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Order Confirmation</h2>
+    <p>Dear <span th:text="${customerName}">Customer</span>,</p>
+    <p>Thank you for your order! 🎉</p>
+    <p>Your order reference is: <strong th:text="${orderReference}">ORD-12345</strong>.</p>
+    <p>Total amount: <strong th:text="${amount}">200.00</strong></p>
+
+    <div class="order-details">
+        <h3>Ordered Products:</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="product : ${products}">
+                <td th:text="${product.name}">Product Name</td>
+                <td th:text="${product.quantity}">1</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>We will notify you once your order is shipped.</p>
+
+    <div class="footer">
+        <p>This is an automated message, please do not reply.</p>
+    </div>
+</div>
+</body>
+</html>

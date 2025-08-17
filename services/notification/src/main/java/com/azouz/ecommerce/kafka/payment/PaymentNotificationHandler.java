@@ -1,8 +1,10 @@
 package com.azouz.ecommerce.kafka.payment;
 
+import com.azouz.ecommerce.email.EmailService;
 import com.azouz.ecommerce.notification.Notification;
 import com.azouz.ecommerce.notification.NotificationHandler;
 import com.azouz.ecommerce.notification.NotificationRepository;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +17,10 @@ import static com.azouz.ecommerce.notification.NotificationType.PAYMENT_CONFIRMA
 public class PaymentNotificationHandler implements NotificationHandler<PaymentConfirmation> {
 
     private final NotificationRepository repository;
+    private final EmailService emailService;
 
     @Override
-    public void handle(PaymentConfirmation message) {
+    public void handle(PaymentConfirmation message) throws MessagingException {
         repository.save(
                 Notification.builder()
                         .type(PAYMENT_CONFIRMATION)
@@ -25,6 +28,13 @@ public class PaymentNotificationHandler implements NotificationHandler<PaymentCo
                         .paymentConfirmation(message)
                         .build()
         );
-        // email sending logic
+
+        var customerName = message.customerFirstname()+ " " + message.customerLastname();
+        emailService.sendPaymentSuccessEmail(
+                message.customerEmail(),
+                customerName,
+                message.amount(),
+                message.orderReference()
+        );
     }
 }

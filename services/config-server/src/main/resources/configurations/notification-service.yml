@@ -1,0 +1,35 @@
+spring:
+  data:
+    mongodb:
+      username: saoussen
+      password: saoussen
+      host: localhost
+      port: 27017
+      database: customer
+      authentication-database: admin
+  kafka:
+    consumer:
+      boostrap-servers: localhost:9092
+      group-id: paymentGroup, orderGroup
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringSerializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.trusted.packages: 'com.azouz.ecommerce.*'
+        spring.json.type.mapping: orderConfirmation:com.azouz.ecommerce.kafka.OrderConfirmation,paymentConfirmation:com.azouz.ecommerce.notification.PaymentNotificationRequest
+mail:
+  host: localhost
+  port: 1025
+  username: saoussen
+  password: saoussen
+  properties:
+    mail:
+      smtp:
+        trust: "*"
+        starttls:
+          enabled: true
+        connectiontimeout: 5000
+        timeout: 3000
+        writetimeout: 5000
+server:
+  port: 8040

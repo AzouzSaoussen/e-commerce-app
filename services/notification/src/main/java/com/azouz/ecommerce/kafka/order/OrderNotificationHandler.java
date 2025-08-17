@@ -1,8 +1,10 @@
 package com.azouz.ecommerce.kafka.order;
 
+import com.azouz.ecommerce.email.EmailService;
 import com.azouz.ecommerce.notification.Notification;
 import com.azouz.ecommerce.notification.NotificationHandler;
 import com.azouz.ecommerce.notification.NotificationRepository;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +17,10 @@ import static com.azouz.ecommerce.notification.NotificationType.ORDER_CONFIRMATI
 public class OrderNotificationHandler implements NotificationHandler<OrderConfirmation> {
 
     private final NotificationRepository repository;
+    private final EmailService emailService;
 
     @Override
-    public void handle(OrderConfirmation message) {
+    public void handle(OrderConfirmation message) throws MessagingException {
         repository.save(
                 Notification.builder()
                         .type(ORDER_CONFIRMATION)
@@ -25,6 +28,14 @@ public class OrderNotificationHandler implements NotificationHandler<OrderConfir
                         .orderConfirmation(message)
                         .build()
         );
-        // email sending logic
+
+        var customerName = message.customer().firstname() + " " + message.customer().lastname();
+        emailService.sendOrderConfirmationEmail(
+                message.customer().email(),
+                customerName,
+                message.totalAmount(),
+                message.orderReference(),
+                message.products()
+        );
     }
 }

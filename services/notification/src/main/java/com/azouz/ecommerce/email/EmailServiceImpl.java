@@ -1,8 +1,12 @@
 package com.azouz.ecommerce.email;
 
+import com.azouz.ecommerce.exception.EmailSendException;
+import com.azouz.ecommerce.kafka.order.Product;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -12,8 +16,10 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static com.azouz.ecommerce.email.EmailTemplates.ORDER_CONFIRMATION;
 import static com.azouz.ecommerce.email.EmailTemplates.PAYMENT_CONFIRMATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.mail.javamail.MimeMessageHelper.MULTIPART_MODE_RELATED;
@@ -22,37 +28,95 @@ import static org.springframework.mail.javamail.MimeMessageHelper.MULTIPART_MODE
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
+
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
 
+    @Value("${application.mail.from}")
+    private String senderEmail;
+
     @Async
     @Override
-    public void sendPaymentSuccessEmail(String destinationEmail, String customerName, BigDecimal amount, String orderReference) throws MessagingException {
-        log.info("Sending payment confirmation email to {} of the customer: {}", destinationEmail, customerName);
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, MULTIPART_MODE_RELATED, UTF_8.name());
-        messageHelper.setFrom("saoussen.azouz.pro@gmail.com");
-        final String templateName = PAYMENT_CONFIRMATION.getTemplate();
+    public void sendPaymentSuccessEmail(String destinationEmail,
+                                        String customerName,
+                                        BigDecimal amount,
+                                        String orderReference) {
+        sendEmail(
+                destinationEmail,
+                PAYMENT_CONFIRMATION.getSubject(),
+                PAYMENT_CONFIRMATION.getTemplate(),
+                buildPaymentVariables(customerName, amount, orderReference)
+        );
+    }
 
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("customerName", customerName);
-        variables.put("amount", amount);
-        variables.put("orderReference", orderReference);
+    @Async
+    @Override
+    public void sendOrderConfirmationEmail(String destinationEmail,
+                                           String customerName,
+                                           BigDecimal amount,
+                                           String orderReference,
+                                           List<Product> products) {
+        sendEmail(
+                destinationEmail,
+                ORDER_CONFIRMATION.getSubject(),
+                ORDER_CONFIRMATION.getTemplate(),
+                buildOrderVariables(customerName, amount, orderReference, products)
+        );
+    }
 
-        Context context = new Context();
-        context.setVariables(variables);
+    /**
+     * Centralized reusable email sending method.
+     */
+    private void sendEmail(String destinationEmail,
+                           String subject,
+                           String templateName,
+                           Map<String, Object> variables) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(mimeMessage, MULTIPART_MODE_RELATED, UTF_8.name());
 
-        messageHelper.setSubject(PAYMENT_CONFIRMATION.getSubject());
+            helper.setFrom(senderEmail);
+            helper.setTo(destinationEmail);
+            helper.setSubject(subject);
 
-        try{
-            String htmlTemplate = templateEngine.process(templateName, context);
-            messageHelper.setText(htmlTemplate, true);
-            messageHelper.setTo(destinationEmail);
+            Context context = new Context();
+            context.setVariables(variables);
+
+            String htmlContent = templateEngine.process(templateName, context);
+            helper.setText(htmlContent, true);
+
             mailSender.send(mimeMessage);
-            log.info("INFO - Email successfully sent to {} with template {}", destinationEmail, templateName);
-        }catch (MessagingException e){
-            log.warn("WARNING - Cannot send email to {}", destinationEmail);
-            //todo handle better the exception
+
+            log.info("✅ Email [{}] sent successfully to {} using template [{}]",
+                    subject, destinationEmail, templateName);
+
+        } catch (MessagingException e) {
+            log.error("❌ Failed to send email [{}] to {} using template [{}]",
+                    subject, destinationEmail, templateName, e);
+            throw new EmailSendException("Failed to send email to " + destinationEmail, e);
         }
+    }
+
+    private Map<String, Object> buildPaymentVariables(String customerName,
+                                                      BigDecimal amount,
+                                                      String orderReference) {
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("customerName", customerName);
+        vars.put("totalAmount", amount);
+        vars.put("orderReference", orderReference);
+        return vars;
+    }
+
+    private Map<String, Object> buildOrderVariables(String customerName,
+                                                    BigDecimal amount,
+                                                    String orderReference,
+                                                    List<Product> products) {
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("customerName", customerName);
+        vars.put("amount", amount);
+        vars.put("orderReference", orderReference);
+        vars.put("products", products);
+        return vars;
     }
 }
